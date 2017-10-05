@@ -9224,20 +9224,18 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
       }
 
       switch (corner) {
-        case 'tr':
-          return 'rotate';
-        case 'br':
-          return 'scale';
-        // case 'mtr':
+        // case 'tr':
         //   return 'rotate';
+        case 'mtr':
+          return 'rotate';
         // case 'ml':
         // case 'mr':
         //   return e[this.altActionKey] ? 'skewY' : 'scaleX';
         // case 'mt':
         // case 'mb':
         //   return e[this.altActionKey] ? 'skewX' : 'scaleY';
-        // default:
-        //   return 'scale';
+         default:
+           return 'scale';
       }
     },
 
@@ -11172,14 +11170,12 @@ fabric.PatternBrush = fabric.util.createClass(fabric.PencilBrush, /** @lends fab
      * @private
      */
     _setCornerCursor: function(corner, target, e) {
-      if (corner === 'tr' && target.hasRotatingPoint) {
+      if (corner === 'mtr' && target.hasRotatingPoint) {
         this.setCursor(this.rotationCursor);
-      } else if (corner === 'br') {
+      }
+      else if (corner in cursorOffset) {
         this.setCursor(this._getRotatedCornerCursor(corner, target, e));
       }
-      // else if (corner in cursorOffset) {
-      //   this.setCursor(this._getRotatedCornerCursor(corner, target, e));
-      // }
       // else if (corner === 'mtr' && target.hasRotatingPoint) {
       //   this.setCursor(this.rotationCursor);
       // }
@@ -12425,7 +12421,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
      * @type Number
      * @default
      */
-    rotatingPointOffset:      40,
+    rotatingPointOffset:      20,
 
     /**
      * When set to `true`, objects are "found" on canvas on per-pixel basis rather than according to bounding box
@@ -14368,16 +14364,19 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
         bl  = new fabric.Point(tl.x - (currentHeight * sinTh), tl.y + (currentHeight * cosTh)),
         br  = new fabric.Point(coords.x + offsetX, coords.y + offsetY);
       if (!absolute) {
+        //console.log('SIN', sinTh);
+        //console.log('COS', cosTh);
         var ml  = new fabric.Point((tl.x + bl.x) / 2, (tl.y + bl.y) / 2),
           mt  = new fabric.Point((tr.x + tl.x) / 2, (tr.y + tl.y) / 2),
           mr  = new fabric.Point((br.x + tr.x) / 2, (br.y + tr.y) / 2),
           mb  = new fabric.Point((br.x + bl.x) / 2, (br.y + bl.y) / 2),
-          mtr = new fabric.Point(mt.x + sinTh * this.rotatingPointOffset, mt.y - cosTh * this.rotatingPointOffset);
+          // mtr = new fabric.Point(mt.x + sinTh * this.rotatingPointOffset, mt.y - cosTh * this.rotatingPointOffset);
+
+          mtr  = new fabric.Point(((br.x + bl.x) / 2) + (-sinTh * this.rotatingPointOffset), ((br.y + bl.y) / 2) + cosTh * this.rotatingPointOffset);
       }
 
       // debugging
-
-      /* setTimeout(function() {
+       /*setTimeout(function() {
          canvas.contextTop.fillStyle = 'green';
          canvas.contextTop.fillRect(mb.x, mb.y, 3, 3);
          canvas.contextTop.fillRect(bl.x, bl.y, 3, 3);
@@ -14388,7 +14387,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
          canvas.contextTop.fillRect(mr.x, mr.y, 3, 3);
          canvas.contextTop.fillRect(mt.x, mt.y, 3, 3);
          canvas.contextTop.fillRect(mtr.x, mtr.y, 3, 3);
-       }, 50); */
+       }, 50);*/
 
       var coords = {
         // corners
@@ -15052,16 +15051,15 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
         height
       );
 
-      // if (this.hasRotatingPoint && this.isControlVisible('mtr') && !this.get('lockRotation') && this.hasControls) {
-      //
-      //   var rotateHeight = -height / 2;
-      //
-      //   ctx.beginPath();
-      //   ctx.moveTo(0, rotateHeight);
-      //   ctx.lineTo(0, rotateHeight - this.rotatingPointOffset);
-      //   ctx.closePath();
-      //   ctx.stroke();
-      // }
+      if (this.hasRotatingPoint && this.isControlVisible('mtr') && !this.get('lockRotation') && this.hasControls) {
+
+        var rotateHeight = height/2;
+        ctx.beginPath();
+        ctx.moveTo(0, rotateHeight);
+        ctx.lineTo(0, rotateHeight + this.rotatingPointOffset);
+        ctx.closePath();
+        ctx.stroke();
+      }
 
       ctx.restore();
       return this;
@@ -15181,9 +15179,15 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
       //     top - this.rotatingPointOffset);
       // }
 
-      ctx.drawImage(document.getElementById('resize_icon'), left + width, top+height, 16, 16);
+      // bottom right
+      var resize = document.getElementById('resize_cursor')
+      ctx.drawImage(resize, left-5, top-5, 23, 23);
+      // top left
+      ctx.drawImage(resize, left + width-5, top+height-5, 23, 23);
+
       if (this.hasRotatingPoint) {
-        ctx.drawImage(document.getElementById('rotate_icon'), left + width, top - 4, 16, 16);
+        var rotate = document.getElementById('rotate_cursor')
+        ctx.drawImage(rotate, left - 1 + width / 2, top + height +  this.rotatingPointOffset, 23, 23);
       }
 
       ctx.restore();
